@@ -1,18 +1,1196 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0f1923" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Assistente" />
-    <title>Assistente Personale</title>
-    <link rel="manifest" href="/manifest.json" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0e14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Assistente"/>
+<title>Assistente Personale</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e14;--bg2:#111620;--bg3:#171d2a;--bg4:#1e2535;
+  --border:#252e40;--text:#e8eef6;--muted:#6a7a90;
+  --gold:#d4a843;--gold2:#9a7420;--gold-glow:rgba(212,168,67,0.2);
+  --blue:#1e5aaa;--blue2:#0e2d5a;--blue-glow:rgba(30,90,170,0.28);
+  --green:#1a5c38;--red:#8a1a1a;--wa:#1a5c2a;
+  --user-b:#152a42;--ai-b:#131a26;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%;height:100dvh;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto;position:relative;overflow:hidden}
+#app::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 85%,rgba(212,168,67,0.05) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(30,90,170,0.07) 0%,transparent 55%);pointer-events:none;z-index:0}
+
+/* SETUP */
+.screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:var(--bg);z-index:200;padding:28px}
+.screen.show{display:flex}
+.screen-card{text-align:center;max-width:380px;width:100%;animation:fadeUp 0.5s ease}
+.screen-logo{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:42px;font-style:italic;color:#0a0500;margin:0 auto 24px;box-shadow:0 0 48px var(--gold-glow)}
+.screen-title{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:6px}
+.screen-sub{font-size:12px;color:var(--muted);margin-bottom:32px;letter-spacing:0.06em;line-height:1.6}
+.screen-label{font-size:14px;color:var(--text);margin-bottom:12px}
+.screen-input{width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:16px;padding:14px 18px;font-size:16px;font-family:var(--sans);outline:none;margin-bottom:14px;text-align:center;transition:border-color 0.2s}
+.screen-input:focus{border-color:var(--gold)}
+.screen-input.mono{font-family:monospace;font-size:13px}
+.btn-primary{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:14px;color:#0a0500;font-weight:600;font-size:16px;font-family:var(--sans);cursor:pointer;margin-bottom:10px;transition:opacity 0.2s}
+.btn-primary:disabled{opacity:0.3;cursor:not-allowed}
+.btn-secondary{width:100%;padding:13px;background:var(--bg4);border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:14px;font-family:var(--sans);cursor:pointer;margin-bottom:10px}
+.btn-google{width:100%;padding:14px;background:#fff;border:none;border-radius:14px;color:#333;font-weight:600;font-size:15px;font-family:var(--sans);cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px}
+.screen-note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px}
+.screen-link{color:var(--gold);font-size:13px;display:block;margin-bottom:20px}
+.step-badge{display:inline-block;background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.3);border-radius:20px;padding:4px 14px;font-size:11px;color:var(--gold);letter-spacing:0.06em;margin-bottom:16px}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;z-index:20;box-shadow:0 2px 20px rgba(0,0,0,0.5)}
+.h-left{display:flex;align-items:center;gap:14px}
+.hamburger{display:flex;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px}
+.h-logo{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;font-style:italic;color:#0a0500;flex-shrink:0;box-shadow:0 0 14px var(--gold-glow)}
+.h-title{font-family:var(--serif);font-size:19px;font-style:italic}
+.h-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.h-right{display:flex;gap:4px;align-items:center}
+.icon-btn{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:7px 9px;border-radius:10px}
+.icon-btn:active{background:var(--bg4)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;margin-left:2px}
+.conn-dot.active{background:#2ecc71}
+
+/* SIDE MENU */
+#menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.25s}
+#menu-overlay.open{opacity:1;pointer-events:all}
+#side-menu{position:fixed;top:0;left:0;bottom:0;width:78%;max-width:300px;background:var(--bg2);border-right:1px solid var(--border);z-index:101;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow-y:auto}
+#side-menu.open{transform:translateX(0)}
+.menu-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.menu-logo{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;font-style:italic;color:#0a0500}
+.menu-name{font-family:var(--serif);font-size:17px;font-style:italic}
+.menu-role{font-size:11px;color:var(--muted)}
+.menu-integrations{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid var(--border)}
+.int-badge{flex:1;padding:7px 6px;border-radius:8px;background:var(--bg4);border:1px solid var(--border);font-size:10px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color 0.2s}
+.int-badge.connected{border-color:rgba(46,204,113,0.4);color:#2ecc71;background:rgba(46,204,113,0.05)}
+.int-badge.connected::before{content:'● ';font-size:8px}
+.menu-section-label{padding:14px 20px 6px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em}
+.menu-item{display:flex;align-items:center;gap:14px;padding:12px 20px;background:none;border:none;color:var(--text);cursor:pointer;width:100%;font-size:14px;font-family:var(--sans);transition:background 0.15s;text-align:left}
+.menu-item:active{background:var(--bg4)}
+.menu-item-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.mi-gold{background:rgba(212,168,67,0.12)}.mi-blue{background:rgba(30,90,170,0.15)}.mi-teal{background:rgba(26,130,100,0.12)}.mi-slate{background:rgba(80,100,140,0.12)}.mi-wa{background:rgba(37,211,102,0.12)}.mi-red{background:rgba(138,26,26,0.15)}
+.menu-item-label{font-weight:500}.menu-item-desc{font-size:11px;color:var(--muted);margin-top:1px}
+.menu-divider{height:1px;background:var(--border);margin:4px 20px}
+.menu-bottom{margin-top:auto;padding:14px 20px 28px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+.menu-bottom-btn{flex:1;min-width:70px;padding:9px;background:var(--bg4);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:11px;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
+
+/* CHAT */
+#chat{flex:1;overflow-y:auto;padding:16px 12px 10px;display:flex;flex-direction:column;gap:13px;position:relative;z-index:1}
+#chat::-webkit-scrollbar{width:3px}
+#chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg-row{display:flex;align-items:flex-end;gap:8px;animation:fadeUp 0.22s ease}
+.msg-row.user{justify-content:flex-end}
+.avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:13px;font-style:italic;color:#0a0500}
+.bubble{max-width:82%;padding:11px 14px;font-size:14.5px;line-height:1.65;font-family:var(--sans)}
+.bubble.user{background:var(--user-b);border-radius:18px 18px 4px 18px}
+.bubble.ai{background:var(--ai-b);border-radius:18px 18px 18px 4px;border:1px solid var(--border)}
+.btime{font-size:10px;color:var(--muted);margin-top:5px;text-align:right}
+.b-action{font-weight:600;color:var(--gold);margin-bottom:5px;font-size:13.5px}
+.b-subj{background:rgba(212,168,67,0.08);border-left:2px solid var(--gold);padding:4px 8px;border-radius:0 6px 6px 0;font-size:13px;color:var(--gold);margin-bottom:6px}
+.b-learned{font-size:11px;color:#4a8a5a;font-style:italic;margin-top:6px}
+.b-hr{border:none;border-top:1px solid var(--border);margin:6px 0}
+.b-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:9px 16px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:10px;color:#0a0500;font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer}
+.b-link.wa{background:linear-gradient(135deg,#25d366,#128c7e)}
+.b-link.cal{background:linear-gradient(135deg,#4285f4,#1a5fcc)}
+.b-link.gmail{background:linear-gradient(135deg,#ea4335,#c5221f)}
+.typing-row{display:flex;align-items:flex-end;gap:8px;animation:fadeUp 0.2s ease}
+.typing-dots{display:flex;gap:5px;padding:13px 16px;background:var(--ai-b);border-radius:18px 18px 18px 4px;border:1px solid var(--border)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:bounce 1s infinite}
+.dot:nth-child(2){animation-delay:0.2s}.dot:nth-child(3){animation-delay:0.4s}
+
+/* ACTION CARDS */
+.action-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;animation:fadeUp 0.2s ease;margin-top:4px}
+.action-card.gold{border-color:rgba(212,168,67,0.35)}
+.action-card.blue{border-color:rgba(66,133,244,0.35)}
+.action-card.wa{border-color:rgba(37,211,102,0.35)}
+.action-card-title{font-weight:600;margin-bottom:10px;font-size:14px}
+.action-card-title.gold{color:var(--gold)}
+.action-card-title.blue{color:#4285f4}
+.action-card-title.wa{color:#25d366}
+.action-card-body{font-size:13px;color:var(--text);margin-bottom:12px;line-height:1.5;white-space:pre-wrap}
+.action-btns{display:flex;gap:8px;flex-wrap:wrap}
+.act-btn{padding:9px 16px;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-family:var(--sans);font-weight:500;flex:1;min-width:80px}
+.act-btn.confirm{background:var(--green);color:#fff}
+.act-btn.danger{background:var(--red);color:#fff}
+.act-btn.neutral{background:var(--bg4);color:var(--muted)}
+.act-btn.wa-btn{background:#25d366;color:#fff}
+.act-btn.gmail-btn{background:#ea4335;color:#fff}
+.act-btn.cal-btn{background:#4285f4;color:#fff}
+
+/* TEXT BAR */
+#text-bar{display:none;gap:8px;padding:10px 14px 8px;background:var(--bg2);border-top:1px solid var(--border);position:relative;z-index:10}
+#input-ta{flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:11px 14px;font-size:15px;font-family:var(--sans);line-height:1.4;resize:none;outline:none;max-height:90px;overflow-y:auto;transition:border-color 0.2s}
+#input-ta:focus{border-color:var(--gold)}
+#input-ta::placeholder{color:var(--muted)}
+.send-btn{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;font-size:17px;cursor:pointer;flex-shrink:0;color:#0a0500;font-weight:bold}
+.send-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* BIG BUTTONS */
+#big-btns{display:flex;gap:20px;justify-content:center;align-items:center;padding:14px 28px 28px;background:var(--bg2);border-top:1px solid var(--border);position:relative;z-index:10}
+.big-btn-wrap{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;max-width:140px}
+.big-btn{width:100%;aspect-ratio:1;max-width:112px;max-height:112px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.12s,box-shadow 0.2s;-webkit-tap-highlight-color:transparent}
+.big-btn:active{transform:scale(0.92)}
+.big-btn.gold-btn{background:linear-gradient(145deg,#e0b84e,var(--gold2));box-shadow:0 8px 32px var(--gold-glow),0 2px 10px rgba(0,0,0,0.5)}
+.big-btn.blue-btn{background:linear-gradient(145deg,#2468c0,var(--blue2));box-shadow:0 8px 32px var(--blue-glow),0 2px 10px rgba(0,0,0,0.5)}
+.big-btn.listening{animation:pulse-ring 1.1s ease-in-out infinite}
+.big-btn-icon{font-size:38px;pointer-events:none;font-family:var(--serif);font-style:italic;color:#0a0500;font-weight:600}
+.big-btn-label{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+
+/* MEMORIA */
+#memoria-view{flex:1;overflow-y:auto;padding:16px;display:none;flex-direction:column;gap:14px;position:relative;z-index:1}
+#memoria-view.active{display:flex}
+.mem-back{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;text-align:left;padding:0;font-family:var(--sans)}
+.mem-title{font-family:var(--serif);font-size:22px;font-style:italic}
+.mem-desc{font-size:13px;color:var(--muted)}
+.mem-section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.mem-label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.mem-val{font-size:15px}
+.mem-input{width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:15px;font-family:var(--sans);outline:none;box-sizing:border-box}
+.mem-input:focus{border-color:var(--gold)}
+.mem-tag{display:inline-block;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:13px;margin:2px 4px 2px 0;color:var(--text)}
+.mem-empty{font-size:13px;color:var(--muted);font-style:italic}
+.save-btn{padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:14px;color:#0a0500;font-weight:600;font-size:15px;font-family:var(--sans);cursor:pointer}
+
+/* PROMEMORIA MODAL */
+#prom-modal{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:150;display:none;align-items:flex-end;justify-content:center}
+#prom-modal.open{display:flex}
+.prom-sheet{background:var(--bg2);border-radius:22px 22px 0 0;border:1px solid var(--border);padding:22px 20px 36px;width:100%;max-width:560px;animation:slideUp 0.3s cubic-bezier(0.4,0,0.2,1)}
+.prom-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.prom-title{font-family:var(--serif);font-size:21px;font-style:italic;margin-bottom:16px;text-align:center}
+.prom-input{width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:13px 16px;font-size:16px;font-family:var(--sans);outline:none;margin-bottom:12px}
+.prom-input:focus{border-color:var(--blue)}
+.prom-mic-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;border-radius:14px;color:#fff;font-size:16px;font-family:var(--sans);font-weight:600;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px}
+.prom-send-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:14px;color:#0a0500;font-size:15px;font-family:var(--sans);font-weight:600;cursor:pointer;margin-bottom:10px}
+.prom-send-btn:disabled{opacity:0.3}
+.prom-cancel{width:100%;padding:12px;background:var(--bg4);border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:14px;font-family:var(--sans);cursor:pointer}
+
+/* TOAST */
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);color:#fff;padding:11px 22px;border-radius:12px;font-size:14px;z-index:300;font-family:var(--sans);box-shadow:0 4px 24px rgba(0,0,0,0.5);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.25s}
+#toast.show{opacity:1}
+
+/* INBOX PANEL */
+#inbox-panel{position:fixed;inset:0;background:var(--bg);z-index:90;display:none;flex-direction:column;max-width:560px;margin:0 auto}
+#inbox-panel.show{display:flex}
+.inbox-header{display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.inbox-back{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;font-family:var(--sans)}
+.inbox-title{font-family:var(--serif);font-size:18px;font-style:italic}
+.inbox-list{flex:1;overflow-y:auto;padding:12px}
+.inbox-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s}
+.inbox-item:active{border-color:var(--gold)}
+.inbox-from{font-weight:600;font-size:14px;margin-bottom:3px}
+.inbox-subj{font-size:13px;color:var(--text);margin-bottom:3px}
+.inbox-prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-time{font-size:10px;color:var(--muted);float:right;margin-top:-14px}
+.inbox-unread{border-left:3px solid var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(212,168,67,0.55),0 8px 32px var(--gold-glow)}70%{box-shadow:0 0 0 20px rgba(212,168,67,0),0 8px 32px var(--gold-glow)}100%{box-shadow:0 0 0 0 rgba(212,168,67,0),0 8px 32px var(--gold-glow)}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SETUP NOME -->
+<div id="setup-nome" class="screen show">
+  <div class="screen-card">
+    <div class="screen-logo">A</div>
+    <h1 class="screen-title">Assistente Personale</h1>
+    <p class="screen-sub">EDILIZIA · EMAIL · CALENDARIO · WHATSAPP</p>
+    <p class="screen-label">Come ti chiami?</p>
+    <input class="screen-input" id="input-nome" placeholder="Il tuo nome" autocomplete="off"/>
+    <button class="btn-primary" id="btn-nome" disabled>Continua →</button>
+    <p class="screen-note">I tuoi dati rimangono solo sul tuo dispositivo</p>
+  </div>
+</div>
+
+<!-- SETUP API KEY -->
+<div id="setup-api" class="screen">
+  <div class="screen-card">
+    <div class="step-badge">PASSO 1 DI 2</div>
+    <div class="screen-logo" style="font-size:32px">🔑</div>
+    <h2 class="screen-title">Chiave API Anthropic</h2>
+    <p class="screen-sub">Inserisci la tua chiave API.<br/>Viene salvata solo sul tuo dispositivo.</p>
+    <a class="screen-link" href="https://console.anthropic.com" target="_blank">Ottieni la chiave su console.anthropic.com →</a>
+    <input class="screen-input mono" id="input-apikey" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false"/>
+    <button class="btn-primary" id="btn-apikey" disabled>Continua →</button>
+    <p class="screen-note">La chiave inizia con sk-ant-api03-</p>
+  </div>
+</div>
+
+<!-- SETUP GOOGLE -->
+<div id="setup-google" class="screen">
+  <div class="screen-card">
+    <div class="step-badge">PASSO 2 DI 2</div>
+    <div class="screen-logo" style="font-size:32px">🔗</div>
+    <h2 class="screen-title">Collega Google</h2>
+    <p class="screen-sub">Per leggere email, gestire il calendario e trovare slot liberi. Puoi saltare e farlo dopo.</p>
+    <button class="btn-google" id="btn-google-auth">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Accedi con Google
+    </button>
+    <button class="btn-secondary" id="btn-skip-google">Salta per ora →</button>
+    <p class="screen-note">Potrai collegare Google in qualsiasi momento dal menu impostazioni</p>
+  </div>
+</div>
+
+<!-- MENU OVERLAY + SIDE MENU -->
+<div id="menu-overlay"></div>
+<nav id="side-menu">
+  <div class="menu-header">
+    <div class="menu-logo">A</div>
+    <div><div class="menu-name" id="menu-name">Assistente</div><div class="menu-role">Edilizia · Costruzioni</div></div>
+  </div>
+  <div class="menu-integrations">
+    <div class="int-badge" id="badge-gmail" onclick="checkGoogleAuth('gmail')">Gmail</div>
+    <div class="int-badge" id="badge-cal" onclick="checkGoogleAuth('cal')">Calendar</div>
+    <div class="int-badge" id="badge-drive" onclick="checkGoogleAuth('drive')">Drive</div>
+    <div class="int-badge" id="badge-sheets" onclick="checkGoogleAuth('sheets')">Sheets</div>
+    <div class="int-badge connected">WhatsApp</div>
+  </div>
+  <div class="menu-section-label">Azioni rapide</div>
+  <button class="menu-item" data-prompt="Leggi le mie ultime email"><div class="menu-item-icon mi-red">📬</div><div><div class="menu-item-label">Leggi email</div><div class="menu-item-desc">Ultime in arrivo</div></div></button>
+  <button class="menu-item" data-prompt="Devo scrivere un'email a "><div class="menu-item-icon mi-gold">📧</div><div><div class="menu-item-label">Scrivi email</div><div class="menu-item-desc">Nel tuo stile</div></div></button>
+  <button class="menu-item" data-prompt="Cosa ho in agenda oggi e questa settimana?"><div class="menu-item-icon mi-blue">📅</div><div><div class="menu-item-label">Agenda</div><div class="menu-item-desc">Oggi e settimana</div></div></button>
+  <button class="menu-item" data-prompt="Aggiungi appuntamento: "><div class="menu-item-icon mi-blue">➕</div><div><div class="menu-item-label">Nuovo appuntamento</div><div class="menu-item-desc">Crea evento</div></div></button>
+  <button class="menu-item" data-prompt="Trova uno slot libero di 1 ora nella settimana prossima"><div class="menu-item-icon mi-teal">🔍</div><div><div class="menu-item-label">Trova slot libero</div><div class="menu-item-desc">Cerca spazio agenda</div></div></button>
+  <button class="menu-item" data-prompt="Manda un WhatsApp a "><div class="menu-item-icon mi-wa">💬</div><div><div class="menu-item-label">WhatsApp</div><div class="menu-item-desc">Prepara e invia</div></div></button>
+  <button class="menu-item" data-prompt="Crea un preventivo per "><div class="menu-item-icon mi-gold">📋</div><div><div class="menu-item-label">Preventivo</div><div class="menu-item-desc">Genera offerta</div></div></button>
+  <button class="menu-item" data-prompt="Crea un documento: "><div class="menu-item-icon mi-teal">✒️</div><div><div class="menu-item-label">Documento</div><div class="menu-item-desc">Rapporto, lettera, nota</div></div></button>
+  <button class="menu-item" data-prompt="Salva su Drive: "><div class="menu-item-icon mi-blue">💾</div><div><div class="menu-item-label">Salva su Drive</div><div class="menu-item-desc">Documenti e preventivi</div></div></button>
+  <button class="menu-item" data-prompt="Cerca su Drive: "><div class="menu-item-icon mi-blue">🔎</div><div><div class="menu-item-label">Cerca su Drive</div><div class="menu-item-desc">Trova file esistenti</div></div></button>
+  <button class="menu-item" data-prompt="Crea un foglio Excel per "><div class="menu-item-icon mi-teal">📊</div><div><div class="menu-item-label">Crea Foglio</div><div class="menu-item-desc">Preventivo, registro, lista</div></div></button>
+  <div class="menu-divider"></div>
+  <div class="menu-section-label">Impostazioni</div>
+  <button class="menu-item" id="menu-memoria"><div class="menu-item-icon mi-gold">🧠</div><div><div class="menu-item-label">Memoria</div><div class="menu-item-desc">Cosa ho imparato</div></div></button>
+  <button class="menu-item" id="menu-google"><div class="menu-item-icon mi-blue">🔗</div><div><div class="menu-item-label">Collega Google</div><div class="menu-item-desc">Gmail e Calendar</div></div></button>
+  <button class="menu-item" id="menu-change-key"><div class="menu-item-icon mi-slate">🔑</div><div><div class="menu-item-label">Chiave API</div><div class="menu-item-desc">Cambia credenziali</div></div></button>
+  <div class="menu-bottom">
+    <button class="menu-bottom-btn" id="speak-toggle">🔊 Voce</button>
+    <button class="menu-bottom-btn" id="menu-inbox-btn">📬 Inbox</button>
+    <button class="menu-bottom-btn" id="clear-chat-btn">🗑️ Pulisci</button>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div class="h-left">
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <div class="h-logo">A</div>
+    <div><div class="h-title">Assistente</div><div class="h-sub" id="h-sub">Edilizia</div></div>
+  </div>
+  <div class="h-right">
+    <span id="gmail-dot" class="conn-dot" title="Gmail"></span>
+    <span id="cal-dot" class="conn-dot" title="Calendar"></span>
+    <button class="icon-btn" id="keyboard-toggle">⌨️</button>
+  </div>
+</header>
+
+<!-- CHAT VIEW -->
+<div id="chat-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+  <div id="chat"></div>
+  <div id="text-bar">
+    <textarea id="input-ta" placeholder="Scrivi un messaggio..." rows="1"></textarea>
+    <button class="send-btn" id="send-btn" disabled>➤</button>
+  </div>
+  <div id="big-btns">
+    <div class="big-btn-wrap">
+      <button class="big-btn gold-btn" id="btn-assistente"><span class="big-btn-icon">A</span></button>
+      <span class="big-btn-label">Assistente</span>
+    </div>
+    <div class="big-btn-wrap">
+      <button class="big-btn blue-btn" id="btn-promemoria"><span class="big-btn-icon">🔔</span></button>
+      <span class="big-btn-label">Promemoria</span>
+    </div>
+  </div>
+</div>
+
+<!-- MEMORIA VIEW -->
+<div id="memoria-view">
+  <button class="mem-back" id="mem-back">← Torna alla chat</button>
+  <h2 class="mem-title">🧠 La mia memoria</h2>
+  <p class="mem-desc">Tutto ciò che ho imparato su di te.</p>
+  <div class="mem-section"><label class="mem-label">Il tuo nome</label><input class="mem-input" id="mem-nome"/></div>
+  <div class="mem-section"><label class="mem-label">Settore</label><div class="mem-val">Edilizia / Costruzioni</div></div>
+  <div class="mem-section"><label class="mem-label">Stile comunicativo</label><div class="mem-val">Cordiale ma professionale</div></div>
+  <div class="mem-section"><label class="mem-label" id="note-label">Note apprese (0)</label><div id="mem-note-content"><div class="mem-empty">Crescerà con l'uso</div></div></div>
+  <div class="mem-section"><label class="mem-label">Clienti noti</label><div id="mem-clienti-content"><div class="mem-empty">Menziona clienti nella chat</div></div></div>
+  <div class="mem-section"><label class="mem-label">Fornitori noti</label><div id="mem-fornitori-content"><div class="mem-empty">Menziona fornitori nella chat</div></div></div>
+  <button class="save-btn" id="mem-save">💾 Salva</button>
+</div>
+
+<!-- INBOX PANEL -->
+<div id="inbox-panel">
+  <div class="inbox-header">
+    <button class="inbox-back" id="inbox-back">← Indietro</button>
+    <div class="inbox-title">📬 Inbox Gmail</div>
+  </div>
+  <div class="inbox-list" id="inbox-list"><div style="padding:20px;text-align:center;color:var(--muted)">Caricamento...</div></div>
+</div>
+
+<!-- PROMEMORIA MODAL -->
+<div id="prom-modal">
+  <div class="prom-sheet">
+    <div class="prom-handle"></div>
+    <p class="prom-title">Nuovo promemoria</p>
+    <!-- STEP 1: scegli tipo -->
+    <div id="prom-step1">
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <button class="prom-type-btn" id="ptype-cal" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;color:var(--text);cursor:pointer;text-align:left;width:100%">
+          <span style="font-size:26px">📅</span>
+          <div><div style="font-weight:600;font-size:14px">Appuntamento</div><div style="font-size:12px;color:var(--muted)">Salvato in Google Calendar</div></div>
+        </button>
+        <button class="prom-type-btn" id="ptype-ora" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;color:var(--text);cursor:pointer;text-align:left;width:100%">
+          <span style="font-size:26px">⏰</span>
+          <div><div style="font-weight:600;font-size:14px">Promemoria orario</div><div style="font-size:12px;color:var(--muted)">Notifica a ora precisa</div></div>
+        </button>
+        <button class="prom-type-btn" id="ptype-geo" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;color:var(--text);cursor:pointer;text-align:left;width:100%">
+          <span style="font-size:26px">📍</span>
+          <div><div style="font-weight:600;font-size:14px">Promemoria luogo</div><div style="font-size:12px;color:var(--muted)">Si attiva quando sei in quel posto</div></div>
+        </button>
+      </div>
+      <button class="prom-cancel" id="prom-cancel" style="width:100%;padding:12px;background:var(--bg4);border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:14px;font-family:var(--sans);cursor:pointer">Annulla</button>
+    </div>
+    <!-- STEP 2a: appuntamento -->
+    <div id="prom-step-cal" style="display:none">
+      <input class="prom-input" id="prom-cal-text" placeholder="Es: Riunione con Rossi"/>
+      <button class="prom-mic-btn" id="prom-mic-cal">🎤&nbsp; Parla</button>
+      <button class="prom-send-btn" id="prom-send-cal" disabled>Aggiungi al calendario</button>
+      <button class="btn-secondary" id="prom-back-cal">← Indietro</button>
+    </div>
+    <!-- STEP 2b: promemoria orario -->
+    <div id="prom-step-ora" style="display:none">
+      <input class="prom-input" id="prom-ora-text" placeholder="Es: Prendere la pastiglia"/>
+      <input class="prom-input" id="prom-ora-time" type="time"/>
+      <input class="prom-input" id="prom-ora-date" type="date"/>
+      <button class="prom-mic-btn" id="prom-mic-ora">🎤&nbsp; Parla</button>
+      <button class="prom-send-btn" id="prom-send-ora" disabled>Imposta promemoria</button>
+      <button class="btn-secondary" id="prom-back-ora">← Indietro</button>
+    </div>
+    <!-- STEP 2c: promemoria luogo -->
+    <div id="prom-step-geo" style="display:none">
+      <input class="prom-input" id="prom-geo-text" placeholder="Cosa? Es: Comprare rete fughe cartongesso"/>
+      <input class="prom-input" id="prom-geo-place" placeholder="Dove? Es: Technomat, Leroy Merlin..."/>
+      <button class="prom-mic-btn" id="prom-mic-geo">🎤&nbsp; Parla</button>
+      <button class="prom-send-btn" id="prom-send-geo" disabled>Salva promemoria luogo</button>
+      <button class="btn-secondary" id="prom-back-geo">← Indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROMEMORIA ALERT -->
+<div id="prom-alert" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;max-width:560px;margin:0 auto">
+  <div style="background:var(--bg2);border-bottom:2px solid var(--gold);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
+    <span style="font-size:24px" id="prom-alert-icon">🔔</span>
+    <div style="flex:1"><div style="font-weight:600;font-size:14px;font-family:var(--sans)" id="prom-alert-title">Promemoria</div><div style="font-size:13px;color:var(--muted);font-family:var(--sans)" id="prom-alert-body"></div></div>
+    <button onclick="document.getElementById('prom-alert').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+<div id="toast"></div>
+
+<script>
+// ==================== CONFIG ====================
+// Google OAuth — inserisci il tuo Client ID dopo aver configurato Google Cloud Console
+// Istruzioni: console.cloud.google.com → Credenziali → OAuth 2.0 → Tipo: Web → URI autorizzati: https://lonatiandrea-commits.github.io
+const GOOGLE_CLIENT_ID = "85726060740-9bmumiaiidffnvbp6np2ke1l563chcma.apps.googleusercontent.com";
+const GOOGLE_SCOPES = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets";
+
+// ==================== STORAGE ====================
+const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+
+// ==================== STATE ====================
+let API_KEY=LS.get("ass_apikey")||"";
+let GOOGLE_TOKEN=LS.get("ass_gtoken")||null;
+let GOOGLE_EMAIL=LS.get("ass_gemail")||null;
+let memoria=LS.get("ass_memoria")||{nome:"",settore:"Edilizia / Costruzioni",stile:"cordiale ma professionale",clienti:[],fornitori:[],note_stile:[],ultima_modifica:null};
+let chatHistory=(LS.get("ass_chat")||[]).slice(-40);
+let loading=false,speakEnabled=true,pendingEvent=null,recog=null,keyboardVisible=false;
+let voiceFemale=null;
+
+// ==================== VOICE ====================
+function initVoice(){
+  if(!window.speechSynthesis)return;
+  const pick=()=>{
+    const all=window.speechSynthesis.getVoices();
+    const it=all.filter(v=>v.lang.startsWith("it"));
+    voiceFemale=it.find(v=>/google/i.test(v.name)&&/giulia|alice|paola|sara|laura|sofia/i.test(v.name))||it.find(v=>/giulia|alice|paola|sara|laura|sofia/i.test(v.name))||it.find(v=>/google/i.test(v.name))||it[0]||null;
+  };
+  pick(); window.speechSynthesis.onvoiceschanged=pick;
+}
+initVoice();
+
+function cleanForSpeech(text){
+  return text
+    .replace(/📧 EMAIL PRONTA:|📅 APPUNTAMENTO RILEVATO:|📄 DOCUMENTO:|🧠 APPRESO:|🔍 RICERCA:|✈️ VOLO:/g,"")
+    .replace(/OGGETTO:.*$/gm,"").replace(/---+/g,".")
+    .replace(/https?:\/\/\S+/g,"").replace(/\[([^\]]+)\]\([^)]+\)/g,"$1")
+    .replace(/(\d+)\s*h\b/gi,"$1 ore").replace(/(\d+)\s*m\b/gi,"$1 minuti")
+    .replace(/€\s*(\d+)/g,"$1 euro").replace(/(\d+)\s*€/g,"$1 euro")
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,"").replace(/[\u{2600}-\u{27BF}]/gu,"")
+    .replace(/[\u{2300}-\u{23FF}]/gu,"").replace(/[\u{2B00}-\u{2BFF}]/gu,"")
+    .replace(/[\u{FE00}-\u{FEFF}]/gu,"").replace(/[*_#>\-•→~`|]/g," ")
+    .replace(/\n{2,}/g,". ").replace(/\n/g,", ")
+    .replace(/\s{2,}/g," ").replace(/,\s*,/g,",").replace(/\.\s*\./g,".").replace(/,\s*\./g,".")
+    .trim();
+}
+
+function splitSentences(text){
+  return text.split(/(?<=[.!?])\s+/).flatMap(s=>s.length>120?s.split(/(?<=,)\s+(?=\w{5,})/):s).map(s=>s.trim()).filter(s=>s.length>3);
+}
+
+function speakNatural(text){
+  if(!speakEnabled||!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const cleaned=cleanForSpeech(text).slice(0,480);
+  if(!cleaned)return;
+  const sentences=splitSentences(cleaned);
+  let i=0;
+  function next(){
+    if(i>=sentences.length)return;
+    const u=new SpeechSynthesisUtterance(sentences[i]);
+    u.lang="it-IT"; u.rate=0.93; u.pitch=1.1; u.volume=1;
+    if(voiceFemale)u.voice=voiceFemale;
+    u.onend=()=>{i++;setTimeout(next,60)};
+    u.onerror=()=>{i++;next()};
+    window.speechSynthesis.speak(u);
+  }
+  next();
+}
+
+// ==================== GOOGLE AUTH ====================
+function googleAuth(){
+  if(!GOOGLE_CLIENT_ID){showToast("Client ID mancante","err");return}
+  const params=new URLSearchParams({
+    client_id:GOOGLE_CLIENT_ID,
+    redirect_uri:"https://lonatiandrea-commits.github.io/ASSISTENTE-APP/",
+    response_type:"token",
+    scope:GOOGLE_SCOPES,
+    prompt:"consent"
+  });
+  const url="https://accounts.google.com/o/oauth2/v2/auth?"+params.toString();
+  // Apri popup OAuth
+  const popup=window.open(url,"google-auth","width=500,height=600,scrollbars=yes");
+  if(!popup){
+    // Fallback: redirect diretto se popup bloccato
+    window.location.href=url;
+    return;
+  }
+  // Polling: controlla quando il popup torna al nostro dominio
+  const check=setInterval(()=>{
+    try{
+      const hash=popup.location.hash;
+      if(hash&&hash.includes("access_token")){
+        clearInterval(check);
+        popup.close();
+        const p=new URLSearchParams(hash.slice(1));
+        const token=p.get("access_token");
+        if(token){
+          GOOGLE_TOKEN=token;
+          LS.set("ass_gtoken",token);
+          updateGoogleDots();
+          fetchGoogleEmail();
+          showToast("Google connesso!");
+          // Chiudi schermata setup se aperta
+          hideAllScreens();
+          document.getElementById("h-sub").textContent=`${memoria.nome} · Edilizia`;
+          if(chatHistory.length===0)addWelcome();else renderAll();
+        }
+      }
+    }catch(e){
+      // Cross-origin — popup ancora su Google, aspetta
+    }
+    if(popup.closed){clearInterval(check);}
+  },500);
+}
+
+function handleOAuthCallback(){
+  // Gestisce il caso redirect (fallback)
+  const hash=window.location.hash;
+  if(!hash)return;
+  const params=new URLSearchParams(hash.slice(1));
+  const token=params.get("access_token");
+  if(!token)return;
+  GOOGLE_TOKEN=token;
+  LS.set("ass_gtoken",token);
+  window.history.replaceState({},document.title,window.location.pathname);
+  fetchGoogleEmail();
+  updateGoogleDots();
+  showToast("Google connesso!");
+}
+
+async function fetchGoogleEmail(){
+  if(!GOOGLE_TOKEN)return;
+  try{
+    const r=await fetch("https://www.googleapis.com/gmail/v1/users/me/profile",{headers:{Authorization:"Bearer "+GOOGLE_TOKEN}});
+    const d=await r.json();
+    if(d.emailAddress){GOOGLE_EMAIL=d.emailAddress;LS.set("ass_gemail",GOOGLE_EMAIL);document.getElementById("h-sub").textContent=`${memoria.nome} · ${GOOGLE_EMAIL}`;}
+  }catch{}
+}
+
+function updateGoogleDots(){
+  const connected=!!GOOGLE_TOKEN;
+  document.getElementById("gmail-dot").classList.toggle("active",connected);
+  document.getElementById("cal-dot").classList.toggle("active",connected);
+  document.getElementById("badge-gmail").classList.toggle("connected",connected);
+  document.getElementById("badge-cal").classList.toggle("connected",connected);
+  document.getElementById("badge-drive").classList.toggle("connected",connected);
+  document.getElementById("badge-sheets").classList.toggle("connected",connected);
+}
+
+function checkGoogleAuth(type){
+  if(!GOOGLE_TOKEN){showToast("Collega Google prima dal menu","err");}
+  else{showToast(`${type==="gmail"?"Gmail":"Calendar"} connesso!`);}
+}
+
+// ==================== GMAIL API ====================
+async function gmailGetInbox(){
+  if(!GOOGLE_TOKEN){showToast("Collega prima Gmail","err");return null}
+  try{
+    const r=await fetch("https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX&labelIds=UNREAD",{headers:{Authorization:"Bearer "+GOOGLE_TOKEN}});
+    const d=await r.json();
+    if(!d.messages)return[];
+    const emails=[];
+    for(const m of d.messages.slice(0,5)){
+      const mr=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,{headers:{Authorization:"Bearer "+GOOGLE_TOKEN}});
+      const md=await mr.json();
+      const headers=md.payload?.headers||[];
+      const get=name=>headers.find(h=>h.name===name)?.value||"";
+      emails.push({id:m.id,from:get("From"),subject:get("Subject"),date:get("Date"),snippet:md.snippet||""});
+    }
+    return emails;
+  }catch(e){showToast("Errore lettura email","err");return null}
+}
+
+async function gmailSend(to,subject,body){
+  if(!GOOGLE_TOKEN){showToast("Collega prima Gmail","err");return false}
+  try{
+    const raw=btoa(`To: ${to}\r\nSubject: ${subject}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    const r=await fetch("https://www.googleapis.com/gmail/v1/users/me/messages/send",{method:"POST",headers:{Authorization:"Bearer "+GOOGLE_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({raw})});
+    return r.ok;
+  }catch{return false}
+}
+
+// ==================== CALENDAR API ====================
+async function calGetEvents(){
+  if(!GOOGLE_TOKEN){return null}
+  try{
+    const now=new Date().toISOString();
+    const end=new Date(Date.now()+14*24*60*60*1000).toISOString();
+    const r=await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now}&timeMax=${end}&singleEvents=true&orderBy=startTime&maxResults=20`,{headers:{Authorization:"Bearer "+GOOGLE_TOKEN}});
+    const d=await r.json();
+    return d.items||[];
+  }catch{return null}
+}
+
+async function calCreateEvent(title,dateStr,timeStr,duration=60){
+  if(!GOOGLE_TOKEN){showToast("Collega prima Calendar","err");return false}
+  try{
+    // Parse Italian date/time
+    const start=new Date(`${dateStr}T${timeStr||"09:00"}:00`);
+    const end=new Date(start.getTime()+duration*60000);
+    const r=await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+GOOGLE_TOKEN,"Content-Type":"application/json"},
+      body:JSON.stringify({summary:title,start:{dateTime:start.toISOString(),timeZone:"Europe/Rome"},end:{dateTime:end.toISOString(),timeZone:"Europe/Rome"}})
+    });
+    return r.ok;
+  }catch{return false}
+}
+
+async function calFindFreeSlots(durationMinutes=60){
+  const events=await calGetEvents();
+  if(!events)return null;
+  const slots=[];
+  const now=new Date();
+  for(let d=0;d<7;d++){
+    const day=new Date(now.getTime()+(d+1)*24*60*60*1000);
+    const dow=day.getDay();
+    if(dow===0||dow===6)continue; // skip weekend
+    const dayEvents=events.filter(e=>{
+      const es=new Date(e.start?.dateTime||e.start?.date);
+      return es.toDateString()===day.toDateString();
+    });
+    // Check 9-18 for free slots
+    for(let h=9;h<=17;h++){
+      const slotStart=new Date(day);slotStart.setHours(h,0,0,0);
+      const slotEnd=new Date(slotStart.getTime()+durationMinutes*60000);
+      const busy=dayEvents.some(e=>{
+        const es=new Date(e.start?.dateTime);const ee=new Date(e.end?.dateTime);
+        return slotStart<ee&&slotEnd>es;
+      });
+      if(!busy){
+        const fmt=slotStart.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
+        slots.push(`${fmt} alle ${h}:00`);
+        if(slots.length>=3)break;
+      }
+    }
+    if(slots.length>=3)break;
+  }
+  return slots;
+}
+
+// ==================== DRIVE API ====================
+async function driveSaveFile(nome, contenuto, mimeType="text/plain"){
+  if(!GOOGLE_TOKEN){showToast("Collega prima Google","err");return null}
+  try{
+    const meta={name:nome,mimeType};
+    const form=new FormData();
+    form.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
+    form.append("file",new Blob([contenuto],{type:mimeType}));
+    const r=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",{
+      method:"POST",headers:{Authorization:"Bearer "+GOOGLE_TOKEN},body:form
+    });
+    const d=await r.json();
+    return d.id?`https://drive.google.com/file/d/${d.id}/view`:null;
+  }catch{return null}
+}
+
+async function driveSearch(query){
+  if(!GOOGLE_TOKEN){return null}
+  try{
+    const q=encodeURIComponent(`name contains '${query}' and trashed=false`);
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,webViewLink)&pageSize=5`,{
+      headers:{Authorization:"Bearer "+GOOGLE_TOKEN}
+    });
+    const d=await r.json();
+    return d.files||[];
+  }catch{return null}
+}
+
+// ==================== SHEETS API ====================
+async function sheetsCreate(titolo, dati){
+  if(!GOOGLE_TOKEN){showToast("Collega prima Google","err");return null}
+  try{
+    // Crea il foglio
+    const r=await fetch("https://sheets.googleapis.com/v4/spreadsheets",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+GOOGLE_TOKEN,"Content-Type":"application/json"},
+      body:JSON.stringify({properties:{title:titolo}})
+    });
+    const sheet=await r.json();
+    if(!sheet.spreadsheetId)return null;
+    // Inserisci i dati se presenti
+    if(dati&&dati.length>0){
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet.spreadsheetId}/values/Sheet1!A1:append?valueInputOption=RAW`,{
+        method:"POST",
+        headers:{Authorization:"Bearer "+GOOGLE_TOKEN,"Content-Type":"application/json"},
+        body:JSON.stringify({values:dati})
+      });
+    }
+    return sheet.spreadsheetUrl||`https://docs.google.com/spreadsheets/d/${sheet.spreadsheetId}`;
+  }catch{return null}
+}
+
+async function sheetsAppend(spreadsheetId, riga){
+  if(!GOOGLE_TOKEN)return false;
+  try{
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=RAW`,{
+      method:"POST",
+      headers:{Authorization:"Bearer "+GOOGLE_TOKEN,"Content-Type":"application/json"},
+      body:JSON.stringify({values:[riga]})
+    });
+    return true;
+  }catch{return false}
+}
+function whatsappSend(phone,message){
+  const cleaned=phone.replace(/\D/g,"");
+  const url=`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+  window.open(url,"_blank");
+}
+
+// ==================== SYSTEM PROMPT ====================
+function buildSystem(context=""){
+  return`Sei l'assistente personale italiano di ${memoria.nome||"un imprenditore edile"}.
+PROFILO: Settore: ${memoria.settore} | Stile: ${memoria.stile}
+Note: ${memoria.note_stile.join("; ")||"nessuna"} | Clienti: ${memoria.clienti.join(", ")||"nessuno"} | Fornitori: ${memoria.fornitori.join(", ")||"nessuno"}
+Google: ${GOOGLE_TOKEN?"CONNESSO - Gmail e Calendar attivi":"NON CONNESSO"}
+${context}
+
+CAPACITA':
+- Web search in tempo reale per qualsiasi informazione aggiornata
+- Gmail: leggi, scrivi, invia email (quando Google connesso)
+- Calendar: crea/modifica eventi, leggi agenda, trova slot liberi
+- WhatsApp: prepara messaggi da inviare con un tap
+- Google Drive: salva documenti, cerca file esistenti ("trova il preventivo Rossi")
+- Google Sheets: crea fogli per preventivi, registri fornitori, rapporti cantiere
+- Quando salvi su Drive o Sheets, termina con: 💾 SALVA DRIVE: [nome file]|[contenuto] oppure 📊 CREA SHEET: [titolo]|[righe CSV]
+
+FORMATI RISPOSTA:
+- Email da inviare → 📧 EMAIL:\nA: [destinatario]\nOGGETTO: [x]\n---\n[testo]
+- Appuntamento → 📅 APPUNTAMENTO:\nTitolo:[x]\nData:[x]\nOra:[x]\nDurata:[x]
+- WhatsApp → 💬 WHATSAPP:\nA: [nome/numero]\n---\n[messaggio]
+- Documento → 📄 DOCUMENTO:\n[contenuto]
+- Volo → cerca con web search poi: ✈️ CERCA ORA: [url skyscanner]
+- Memoria → 🧠 APPRESO: [cosa]
+
+REGOLE: Italiano perfetto. Conciso — utente spesso in auto. Tono caldo e diretto.`;
+}
+
+// ==================== RENDER ====================
+const chatEl=document.getElementById("chat");
+
+function renderBubble(msg){
+  const row=document.createElement("div");row.className=`msg-row ${msg.role==="user"?"user":"ai"}`;
+  let inner=msg.role==="assistant"?`<div class="avatar">A</div>`:"";
+  const lines=msg.content.split("\n");let bc="";
+  for(const line of lines){
+    if(/^[📧📅📄✈️💬🔍]/.test(line))bc+=`<div class="b-action">${line}</div>`;
+    else if(line.startsWith("OGGETTO:")||line.startsWith("A:"))bc+=`<div class="b-subj">${line}</div>`;
+    else if(line==="---")bc+=`<hr class="b-hr"/>`;
+    else if(line.startsWith("🧠 APPRESO:"))bc+=`<div class="b-learned">${line}</div>`;
+    else if(line.startsWith("✈️ CERCA ORA:")){const url=line.match(/https?:\/\/\S+/)?.[0]||"https://www.skyscanner.it";bc+=`<a class="b-link" href="${url}" target="_blank">Cerca su Skyscanner →</a>`;}
+    else bc+=`<div>${line||"<br/>"}</div>`;
+  }
+  const time=new Date(msg.ts).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+  bc+=`<div class="btime">${time}</div>`;
+  inner+=`<div class="bubble ${msg.role==="user"?"user":"ai"}">${bc}</div>`;
+  row.innerHTML=inner;return row;
+}
+
+function scrollDown(){setTimeout(()=>chatEl.scrollTop=chatEl.scrollHeight,60)}
+function showTyping(){const row=document.createElement("div");row.className="typing-row";row.id="typing";row.innerHTML=`<div class="avatar">A</div><div class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;chatEl.appendChild(row);scrollDown()}
+function hideTyping(){document.getElementById("typing")?.remove()}
+
+// Action cards for email/whatsapp/calendar confirmation
+function showEmailCard(to,subject,body){
+  const card=document.createElement("div");card.className="action-card gold";card.id="email-card";
+  card.innerHTML=`<div class="action-card-title gold">📧 Invio email?</div>
+    <div class="action-card-body"><strong>A:</strong> ${to}\n<strong>Oggetto:</strong> ${subject}</div>
+    <div class="action-btns">
+      <button class="act-btn gmail-btn" id="email-send-btn">Invia con Gmail</button>
+      <button class="act-btn neutral" id="email-cancel-btn">Annulla</button>
+    </div>`;
+  chatEl.appendChild(card);scrollDown();
+  document.getElementById("email-send-btn").addEventListener("click",async()=>{
+    card.remove();
+    const ok=await gmailSend(to,subject,body);
+    showToast(ok?"Email inviata!":"Errore invio","ok");
+  });
+  document.getElementById("email-cancel-btn").addEventListener("click",()=>card.remove());
+}
+
+function showCalendarCard(title,date,time,duration){
+  const card=document.createElement("div");card.className="action-card blue";card.id="cal-card";
+  card.innerHTML=`<div class="action-card-title blue">📅 Aggiungo al calendario?</div>
+    <div class="action-card-body">${title}\n${date} alle ${time||"orario da definire"}</div>
+    <div class="action-btns">
+      <button class="act-btn cal-btn" id="cal-add-btn">Aggiungi</button>
+      <button class="act-btn neutral" id="cal-cancel-btn">No</button>
+    </div>`;
+  chatEl.appendChild(card);scrollDown();
+  document.getElementById("cal-add-btn").addEventListener("click",async()=>{
+    card.remove();
+    const ok=await calCreateEvent(title,date,time,duration||60);
+    showToast(ok?"Aggiunto al calendario!":"Errore calendario","ok");
+  });
+  document.getElementById("cal-cancel-btn").addEventListener("click",()=>card.remove());
+}
+
+function showWhatsAppCard(recipient,message){
+  const card=document.createElement("div");card.className="action-card wa";card.id="wa-card";
+  card.innerHTML=`<div class="action-card-title wa">💬 Invia WhatsApp?</div>
+    <div class="action-card-body"><strong>A:</strong> ${recipient}\n\n${message}</div>
+    <div class="action-btns">
+      <button class="act-btn wa-btn" id="wa-send-btn">Apri WhatsApp</button>
+      <button class="act-btn neutral" id="wa-cancel-btn">Annulla</button>
+    </div>`;
+  chatEl.appendChild(card);scrollDown();
+  document.getElementById("wa-send-btn").addEventListener("click",()=>{
+    card.remove();
+    // Try to find number in memoria or ask
+    const num=memoria.clienti.find(c=>c.toLowerCase().includes(recipient.toLowerCase()));
+    whatsappSend(num||recipient,message);
+  });
+  document.getElementById("wa-cancel-btn").addEventListener("click",()=>card.remove());
+}
+
+// ==================== SEND ====================
+async function send(text){
+  if(!text?.trim()||loading)return;
+  if(!API_KEY){showToast("Inserisci prima la chiave API","err");return}
+  const userMsg={role:"user",content:text.trim(),ts:Date.now()};
+  chatHistory.push(userMsg);chatEl.appendChild(renderBubble(userMsg));
+  if(document.getElementById("input-ta"))document.getElementById("input-ta").value="";
+  document.getElementById("send-btn").disabled=true;
+  loading=true;showTyping();scrollDown();
+  document.getElementById("btn-assistente").classList.add("listening");
+
+  // Gather live context
+  let context="";
+  const lowerText=text.toLowerCase();
+  if(GOOGLE_TOKEN&&(lowerText.includes("email")||lowerText.includes("mail")||lowerText.includes("inbox")||lowerText.includes("messag"))){
+    const emails=await gmailGetInbox();
+    if(emails&&emails.length>0){
+      context+="\nEMAIL RECENTI IN ARRIVO:\n";
+      emails.forEach((e,i)=>context+=`${i+1}. Da: ${e.from} | Oggetto: ${e.subject} | ${e.snippet.slice(0,80)}...\n`);
+    }
+  }
+  if(GOOGLE_TOKEN&&(lowerText.includes("agenda")||lowerText.includes("appuntament")||lowerText.includes("calendar")||lowerText.includes("settimana")||lowerText.includes("slot")||lowerText.includes("libero"))){
+    const events=await calGetEvents();
+    if(events&&events.length>0){
+      context+="\nEVENTI CALENDARIO PROSSIMI 14 GIORNI:\n";
+      events.slice(0,10).forEach(e=>{
+        const start=new Date(e.start?.dateTime||e.start?.date);
+        const fmt=start.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+        context+=`- ${fmt}: ${e.summary}\n`;
+      });
+    }
+    if(lowerText.includes("slot")||lowerText.includes("libero")||lowerText.includes("spazio")){
+      const slots=await calFindFreeSlots(60);
+      if(slots&&slots.length>0)context+=`\nSLOT LIBERI TROVATI:\n${slots.join("\n")}\n`;
+    }
+  }
+
+  try{
+    const messages=chatHistory.map(m=>({role:m.role,content:m.content}));
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,system:buildSystem(context),messages,tools:[{type:"web_search_20250305",name:"web_search"}]})
+    });
+    const data=await res.json();
+    let reply="";
+    if(data.content)for(const b of data.content)if(b.type==="text")reply+=b.text;
+    if(!reply)reply=data.error?.message||"Non ho ricevuto risposta. Riprova.";
+
+    const aiMsg={role:"assistant",content:reply,ts:Date.now()};
+    chatHistory.push(aiMsg);LS.set("ass_chat",chatHistory.slice(-40));
+    hideTyping();chatEl.appendChild(renderBubble(aiMsg));
+
+    // Parse email action
+    if(reply.includes("📧 EMAIL:")){
+      const toM=reply.match(/A:\s*(.+)/);const subjM=reply.match(/OGGETTO:\s*(.+)/);
+      const bodyM=reply.split("---\n")[1]?.split("\n🧠")[0]?.trim();
+      if(toM&&subjM&&bodyM)showEmailCard(toM[1].trim(),subjM[1].trim(),bodyM);
+    }
+    // Parse calendar action
+    if(reply.includes("📅 APPUNTAMENTO:")){
+      const titleM=reply.match(/Titolo:\s*(.+)/);const dateM=reply.match(/Data:\s*(.+)/);const timeM=reply.match(/Ora:\s*(.+)/);
+      if(titleM&&dateM)showCalendarCard(titleM[1].trim(),dateM[1].trim(),timeM?.[1]?.trim());
+    }
+    // Parse WhatsApp action
+    if(reply.includes("💬 WHATSAPP:")){
+      const toM=reply.match(/A:\s*(.+)/);const msgM=reply.split("---\n")[1]?.split("\n🧠")[0]?.trim();
+      if(toM&&msgM)showWhatsAppCard(toM[1].trim(),msgM);
+    }
+    // Parse Drive save
+    if(reply.includes("💾 SALVA DRIVE:")){
+      const parts=reply.split("💾 SALVA DRIVE:")[1].split("\n")[0].split("|");
+      const nomeFile=parts[0]?.trim();const contenuto=parts[1]?.trim()||reply;
+      if(nomeFile){
+        const url=await driveSaveFile(nomeFile,contenuto);
+        if(url){
+          const linkMsg={role:"assistant",content:`💾 Salvato su Drive!\nClicca per aprire: ${url}`,ts:Date.now()};
+          chatHistory.push(linkMsg);chatEl.appendChild(renderBubble(linkMsg));
+          showToast("Salvato su Drive!");
+        }
+      }
+    }
+    // Parse Sheets create
+    if(reply.includes("📊 CREA SHEET:")){
+      const parts=reply.split("📊 CREA SHEET:")[1].split("\n")[0].split("|");
+      const titolo=parts[0]?.trim();const csvRaw=parts[1]?.trim();
+      if(titolo){
+        const righe=csvRaw?csvRaw.split(";").map(r=>r.split(",")):[[]];
+        const url=await sheetsCreate(titolo,righe);
+        if(url){
+          const linkMsg={role:"assistant",content:`📊 Foglio creato su Google Sheets!\nClicca per aprire: ${url}`,ts:Date.now()};
+          chatHistory.push(linkMsg);chatEl.appendChild(renderBubble(linkMsg));
+          showToast("Foglio creato!");
+        }
+      }
+    }
+    // Parse Drive search
+    if(reply.includes("🔎 CERCA DRIVE:")){
+      const query=reply.split("🔎 CERCA DRIVE:")[1].split("\n")[0].trim();
+      const files=await driveSearch(query);
+      if(files&&files.length>0){
+        const lista=files.map(f=>`📄 ${f.name}`).join("\n");
+        const searchMsg={role:"assistant",content:`File trovati su Drive:\n${lista}`,ts:Date.now()};
+        chatHistory.push(searchMsg);chatEl.appendChild(renderBubble(searchMsg));
+      }
+    }{const learned=reply.split("🧠 APPRESO:")[1].split("\n")[0].trim();if(learned){memoria.note_stile=[...memoria.note_stile.slice(-9),learned];memoria.ultima_modifica=Date.now();LS.set("ass_memoria",memoria)}}
+
+    speakNatural(reply);scrollDown();
+  }catch(e){
+    hideTyping();
+    const err={role:"assistant",content:"Errore di connessione. Controlla la rete e riprova.",ts:Date.now()};
+    chatHistory.push(err);chatEl.appendChild(renderBubble(err));scrollDown();
+  }
+  loading=false;document.getElementById("btn-assistente").classList.remove("listening");
+}
+
+// ==================== INBOX VIEW ====================
+async function showInbox(){
+  document.getElementById("inbox-panel").classList.add("show");
+  closeMenu();
+  const list=document.getElementById("inbox-list");
+  list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Caricamento...</div>`;
+  if(!GOOGLE_TOKEN){list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Collega prima Gmail dal menu</div>`;return}
+  const emails=await gmailGetInbox();
+  if(!emails||emails.length===0){list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Nessuna email non letta</div>`;return}
+  list.innerHTML=emails.map(e=>`
+    <div class="inbox-item inbox-unread" onclick="send('Rispondi a questa email: Da ${e.from}, Oggetto: ${e.subject}')">
+      <div class="inbox-time">${new Date(e.date).toLocaleDateString("it-IT")}</div>
+      <div class="inbox-from">${e.from.replace(/<.*>/,"").trim()}</div>
+      <div class="inbox-subj">${e.subject}</div>
+      <div class="inbox-prev">${e.snippet}</div>
+    </div>`).join("");
+}
+
+// ==================== VOICE ====================
+function startVoice(onResult,onEnd){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showToast("Microfono non supportato","err");return}
+  if(recog){recog.stop();recog=null}
+  recog=new SR();recog.lang="it-IT";recog.continuous=false;recog.interimResults=false;
+  recog.onresult=e=>onResult(e.results[0][0].transcript);
+  recog.onend=()=>{recog=null;if(onEnd)onEnd()};
+  recog.onerror=()=>{recog=null;showToast("Errore microfono","err");if(onEnd)onEnd()};
+  recog.start();
+}
+
+// ==================== TOAST ====================
+let toastTimer;
+function showToast(msg,type="ok"){document.getElementById("toast").textContent=msg;document.getElementById("toast").style.background=type==="err"?"#8a1a1a":"#1a5c38";document.getElementById("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>document.getElementById("toast").classList.remove("show"),3200)}
+
+// ==================== SCREENS ====================
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));document.getElementById(id)?.classList.add("show")}
+function hideAllScreens(){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"))}
+
+// ==================== INIT FLOW ====================
+function initApp(){
+  handleOAuthCallback();
+  updateGoogleDots();
+  if(GOOGLE_TOKEN)fetchGoogleEmail();
+  if(!memoria.nome){showScreen("setup-nome");return}
+  if(!API_KEY){showScreen("setup-api");return}
+  hideAllScreens();
+  document.getElementById("h-sub").textContent=`${memoria.nome} · ${GOOGLE_EMAIL||"Edilizia"}`;
+  document.getElementById("menu-name").textContent=memoria.nome;
+  renderAll();
+}
+
+function renderAll(){document.getElementById("chat").innerHTML="";for(const msg of chatHistory)document.getElementById("chat").appendChild(renderBubble(msg));scrollDown()}
+
+// Setup Nome
+document.getElementById("input-nome").addEventListener("input",e=>document.getElementById("btn-nome").disabled=!e.target.value.trim());
+document.getElementById("input-nome").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.value.trim())submitNome()});
+document.getElementById("btn-nome").addEventListener("click",submitNome);
+function submitNome(){
+  const nome=document.getElementById("input-nome").value.trim();if(!nome)return;
+  memoria.nome=nome;memoria.ultima_modifica=Date.now();LS.set("ass_memoria",memoria);
+  document.getElementById("menu-name").textContent=nome;
+  showScreen("setup-api");
+}
+
+// Setup API
+document.getElementById("input-apikey").addEventListener("input",e=>document.getElementById("btn-apikey").disabled=!e.target.value.trim().startsWith("sk-ant"));
+document.getElementById("btn-apikey").addEventListener("click",()=>{
+  const key=document.getElementById("input-apikey").value.trim();if(!key)return;
+  API_KEY=key;LS.set("ass_apikey",key);
+  showScreen("setup-google");
+});
+
+// Setup Google
+document.getElementById("btn-google-auth").addEventListener("click",googleAuth);
+document.getElementById("btn-skip-google").addEventListener("click",()=>{
+  hideAllScreens();
+  document.getElementById("h-sub").textContent=`${memoria.nome} · Edilizia`;
+  document.getElementById("menu-name").textContent=memoria.nome;
+  if(chatHistory.length===0)addWelcome();
+  else renderAll();
+});
+
+function addWelcome(){
+  const w={role:"assistant",content:`Ciao ${memoria.nome}! Sono il tuo assistente personale.\n\nPremi A per parlarmi vocalmente.\nPremi per un promemoria rapido.\nDal menu puoi leggere email, gestire il calendario e inviare WhatsApp.\n\nCosa facciamo?`,ts:Date.now()};
+  chatHistory.push(w);LS.set("ass_chat",chatHistory);document.getElementById("chat").appendChild(renderBubble(w));scrollDown();
+}
+
+// BIG BUTTONS
+document.getElementById("btn-assistente").addEventListener("click",()=>{if(loading)return;document.getElementById("btn-assistente").classList.add("listening");startVoice(text=>send(text),()=>document.getElementById("btn-assistente").classList.remove("listening"))});
+// ==================== PROMEMORIA 3 TIPI ====================
+let promemoria = LS.get("ass_promemoria") || []; // {id,tipo,testo,luogo,lat,lon,orario,data,fatto}
+function savePromemoria(){LS.set("ass_promemoria",promemoria)}
+
+function showPromStep(step){
+  ["prom-step1","prom-step-cal","prom-step-ora","prom-step-geo"].forEach(s=>{
+    document.getElementById(s).style.display=s===step?"block":"none";
+  });
+}
+
+function openPromModal(){
+  document.getElementById("prom-modal").classList.add("open");
+  showPromStep("prom-step1");
+  // Pre-fill today's date
+  const today=new Date().toISOString().split("T")[0];
+  document.getElementById("prom-ora-date").value=today;
+  const now=new Date();
+  document.getElementById("prom-ora-time").value=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+}
+
+function closePromModal(){document.getElementById("prom-modal").classList.remove("open")}
+
+document.getElementById("btn-promemoria").addEventListener("click",openPromModal);
+document.getElementById("prom-cancel").addEventListener("click",closePromModal);
+document.getElementById("prom-modal").addEventListener("click",e=>{if(e.target===document.getElementById("prom-modal"))closePromModal()});
+
+// Tipo: Appuntamento
+document.getElementById("ptype-cal").addEventListener("click",()=>showPromStep("prom-step-cal"));
+document.getElementById("prom-back-cal").addEventListener("click",()=>showPromStep("prom-step1"));
+document.getElementById("prom-cal-text").addEventListener("input",e=>document.getElementById("prom-send-cal").disabled=!e.target.value.trim());
+document.getElementById("prom-mic-cal").addEventListener("click",()=>{const b=document.getElementById("prom-mic-cal");b.innerHTML="Ascolto...";startVoice(t=>{document.getElementById("prom-cal-text").value=t;document.getElementById("prom-send-cal").disabled=false;b.innerHTML="🎤&nbsp; Parla"},()=>b.innerHTML="🎤&nbsp; Parla")});
+document.getElementById("prom-send-cal").addEventListener("click",()=>{
+  const testo=document.getElementById("prom-cal-text").value.trim();if(!testo)return;
+  closePromModal();
+  send("Aggiungi appuntamento al calendario: "+testo);
+});
+
+// Tipo: Promemoria orario con notifica push
+document.getElementById("ptype-ora").addEventListener("click",()=>{
+  showPromStep("prom-step-ora");
+  // Request notification permission
+  if("Notification" in window && Notification.permission==="default")Notification.requestPermission();
+});
+document.getElementById("prom-back-ora").addEventListener("click",()=>showPromStep("prom-step1"));
+document.getElementById("prom-ora-text").addEventListener("input",e=>document.getElementById("prom-send-ora").disabled=!e.target.value.trim());
+document.getElementById("prom-mic-ora").addEventListener("click",()=>{const b=document.getElementById("prom-mic-ora");b.innerHTML="Ascolto...";startVoice(t=>{document.getElementById("prom-ora-text").value=t;document.getElementById("prom-send-ora").disabled=false;b.innerHTML="🎤&nbsp; Parla"},()=>b.innerHTML="🎤&nbsp; Parla")});
+document.getElementById("prom-send-ora").addEventListener("click",()=>{
+  const testo=document.getElementById("prom-ora-text").value.trim();
+  const orario=document.getElementById("prom-ora-time").value;
+  const data=document.getElementById("prom-ora-date").value;
+  if(!testo||!orario||!data)return;
+  const scadenza=new Date(`${data}T${orario}`).getTime();
+  const id=Date.now();
+  promemoria.push({id,tipo:"ora",testo,orario,data,scadenza,fatto:false});
+  savePromemoria();
+  closePromModal();
+  // Schedule notification
+  const delay=scadenza-Date.now();
+  if(delay>0&&delay<7*24*60*60*1000){
+    setTimeout(()=>{
+      if("Notification" in window&&Notification.permission==="granted"){
+        new Notification("Promemoria",{body:testo,icon:"/favicon.ico"});
+      }
+      showAlert("⏰",`Promemoria: ${testo}`,testo);
+      speakNatural("Promemoria: "+testo);
+      const p=promemoria.find(p=>p.id===id);if(p)p.fatto=true;savePromemoria();
+    },delay);
+  }
+  const fmtData=new Date(`${data}T${orario}`).toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  showToast(`Promemoria impostato: ${fmtData}`);
+});
+
+// Tipo: Promemoria luogo (geolocalizzato)
+document.getElementById("ptype-geo").addEventListener("click",()=>showPromStep("prom-step-geo"));
+document.getElementById("prom-back-geo").addEventListener("click",()=>showPromStep("prom-step1"));
+const geoTextEl=document.getElementById("prom-geo-text");
+const geoPlaceEl=document.getElementById("prom-geo-place");
+function checkGeoSend(){document.getElementById("prom-send-geo").disabled=!(geoTextEl.value.trim()&&geoPlaceEl.value.trim())}
+geoTextEl.addEventListener("input",checkGeoSend);
+geoPlaceEl.addEventListener("input",checkGeoSend);
+document.getElementById("prom-mic-geo").addEventListener("click",()=>{
+  const b=document.getElementById("prom-mic-geo");b.innerHTML="Ascolto...";
+  startVoice(t=>{
+    // Try to parse "quando sono a X ricordami di Y"
+    const match=t.match(/quando.*(?:a|al|alla|allo|ai)\s+([^,]+)(?:,|\s+ricordami\s+di\s+)(.*)/i);
+    if(match){geoPlaceEl.value=match[1].trim();geoTextEl.value=match[2].trim();}
+    else geoTextEl.value=t;
+    checkGeoSend();b.innerHTML="🎤&nbsp; Parla";
+  },()=>b.innerHTML="🎤&nbsp; Parla");
+});
+document.getElementById("prom-send-geo").addEventListener("click",async()=>{
+  const testo=geoTextEl.value.trim();const luogo=geoPlaceEl.value.trim();
+  if(!testo||!luogo)return;
+  // Try to geocode the place via nominatim
+  let lat=null,lon=null;
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(luogo)}&format=json&limit=1`);
+    const d=await r.json();
+    if(d[0]){lat=parseFloat(d[0].lat);lon=parseFloat(d[0].lon);}
+  }catch{}
+  promemoria.push({id:Date.now(),tipo:"geo",testo,luogo,lat,lon,raggio:500,fatto:false});
+  savePromemoria();
+  closePromModal();
+  geoTextEl.value="";geoPlaceEl.value="";
+  showToast(`Promemoria luogo salvato: ${luogo}`);
+});
+
+// Alert banner
+function showAlert(icon,title,body){
+  document.getElementById("prom-alert-icon").textContent=icon;
+  document.getElementById("prom-alert-title").textContent=title;
+  document.getElementById("prom-alert-body").textContent=body;
+  document.getElementById("prom-alert").style.display="block";
+  setTimeout(()=>document.getElementById("prom-alert").style.display="none",8000);
+}
+
+// Geolocalizzazione all'apertura — controlla promemoria luoghi
+function checkGeoPromemoria(){
+  const geoProms=promemoria.filter(p=>p.tipo==="geo"&&!p.fatto&&p.lat&&p.lon);
+  if(geoProms.length===0)return;
+  navigator.geolocation?.getCurrentPosition(pos=>{
+    const {latitude:userLat,longitude:userLon}=pos.coords;
+    geoProms.forEach(p=>{
+      const dist=haversine(userLat,userLon,p.lat,p.lon);
+      if(dist<=p.raggio){
+        showAlert("📍",`Sei vicino a ${p.luogo}`,p.testo);
+        speakNatural(`Promemoria: sei vicino a ${p.luogo}. ${p.testo}`);
+        p.fatto=true;savePromemoria();
+      }
+    });
+  },()=>{},{enableHighAccuracy:false,timeout:5000});
+}
+
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Keyboard
+document.getElementById("keyboard-toggle").addEventListener("click",()=>{keyboardVisible=!keyboardVisible;document.getElementById("text-bar").style.display=keyboardVisible?"flex":"none";document.getElementById("keyboard-toggle").textContent=keyboardVisible?"✕":"⌨️";if(keyboardVisible)setTimeout(()=>document.getElementById("input-ta").focus(),100)});
+document.getElementById("input-ta").addEventListener("input",e=>{document.getElementById("send-btn").disabled=!e.target.value.trim();e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,90)+"px"});
+document.getElementById("input-ta").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send(e.target.value)}});
+document.getElementById("send-btn").addEventListener("click",()=>send(document.getElementById("input-ta").value));
+
+// Menu
+document.getElementById("hamburger").addEventListener("click",()=>{document.getElementById("side-menu").classList.add("open");document.getElementById("menu-overlay").classList.add("open")});
+document.getElementById("menu-overlay").addEventListener("click",closeMenu);
+function closeMenu(){document.getElementById("side-menu").classList.remove("open");document.getElementById("menu-overlay").classList.remove("open")}
+document.querySelectorAll(".menu-item[data-prompt]").forEach(btn=>btn.addEventListener("click",()=>{
+  closeMenu();
+  const prompt=btn.dataset.prompt;
+  // Special: directly send read-only prompts
+  if(prompt.startsWith("Leggi")||prompt.startsWith("Cosa ho")||prompt.startsWith("Trova uno slot")){send(prompt);}
+  else{document.getElementById("text-bar").style.display="flex";keyboardVisible=true;document.getElementById("keyboard-toggle").textContent="✕";document.getElementById("input-ta").value=prompt;document.getElementById("send-btn").disabled=false;setTimeout(()=>{document.getElementById("input-ta").focus();document.getElementById("input-ta").setSelectionRange(prompt.length,prompt.length)},300);}
+}));
+document.getElementById("menu-memoria").addEventListener("click",()=>{closeMenu();document.getElementById("chat-view").style.display="none";document.getElementById("memoria-view").classList.add("active");document.getElementById("mem-nome").value=memoria.nome;renderMemoria()});
+document.getElementById("menu-google").addEventListener("click",()=>{closeMenu();showScreen("setup-google")});
+document.getElementById("menu-change-key").addEventListener("click",()=>{closeMenu();document.getElementById("input-apikey").value="";document.getElementById("btn-apikey").disabled=true;showScreen("setup-api")});
+document.getElementById("speak-toggle").addEventListener("click",()=>{speakEnabled=!speakEnabled;document.getElementById("speak-toggle").textContent=speakEnabled?"Voce":"Muto";showToast(speakEnabled?"Voce attivata":"Voce disattivata")});
+document.getElementById("clear-chat-btn").addEventListener("click",()=>{if(confirm("Cancellare tutta la cronologia?")){chatHistory=[];LS.set("ass_chat",[]);document.getElementById("chat").innerHTML="";closeMenu();showToast("Chat pulita")}});
+document.getElementById("menu-inbox-btn").addEventListener("click",showInbox);
+document.getElementById("inbox-back").addEventListener("click",()=>document.getElementById("inbox-panel").classList.remove("show"));
+
+// Memoria
+document.getElementById("mem-back").addEventListener("click",()=>{document.getElementById("memoria-view").classList.remove("active");document.getElementById("chat-view").style.display="flex"});
+document.getElementById("mem-save").addEventListener("click",()=>{memoria.nome=document.getElementById("mem-nome").value.trim()||memoria.nome;memoria.ultima_modifica=Date.now();LS.set("ass_memoria",memoria);document.getElementById("h-sub").textContent=`${memoria.nome} · ${GOOGLE_EMAIL||"Edilizia"}`;document.getElementById("menu-name").textContent=memoria.nome;document.getElementById("memoria-view").classList.remove("active");document.getElementById("chat-view").style.display="flex";showToast("Salvato!")});
+function renderMemoria(){document.getElementById("note-label").textContent=`Note apprese (${memoria.note_stile.length})`;document.getElementById("mem-note-content").innerHTML=memoria.note_stile.length===0?'<div class="mem-empty">Crescerà con l\'uso</div>':memoria.note_stile.map(n=>`<span class="mem-tag">${n}</span>`).join("");document.getElementById("mem-clienti-content").innerHTML=memoria.clienti.length===0?'<div class="mem-empty">Menziona clienti nella chat</div>':memoria.clienti.map(c=>`<span class="mem-tag">${c}</span>`).join("");document.getElementById("mem-fornitori-content").innerHTML=memoria.fornitori.length===0?'<div class="mem-empty">Menziona fornitori nella chat</div>':memoria.fornitori.map(f=>`<span class="mem-tag">${f}</span>`).join("")}
+
+// START
+initApp();setTimeout(checkGeoPromemoria,1500);
+</script>
+</body>
 </html>
